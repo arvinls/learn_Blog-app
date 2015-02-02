@@ -9,7 +9,7 @@ Database operation module.
 This module is imitate the  http://www.liaoxuefeng.com/wiki/001374738125095c955c1e6d8bb493182103fac9270762a000/0013976160374750f95bd09087744569be5aae6160c8351000
 
 '''
-import time, uudi, functools, threading, logging
+import time, uuid, functools, threading, logging
 
 #Dick object
 class Dict(dict):
@@ -33,13 +33,15 @@ def next_id(t = None):
 
 
 class _LasyConnection(object):
-	def __init(self):
-		self.connection = None  
+	def __init__(self):
+		self.connection = None
+
+
 	def cursor(self):
 		if self.connection is None:
 			connection = engine.connect()  # in the future, the ENGINE will be design
 
-
+			logging.info('open connection <%s>...' % hex(id(connection)))
 			self.connection = connection
 
 		return self.connection.cursor()
@@ -54,7 +56,10 @@ class _LasyConnection(object):
 		if self.connection:
 			connection = self.connection
 			self.connection = None
+			logging.info('close connection <%s>...' % hex(id(connection)))
+			print connection
 			connection.close()
+
 
 class _DbCtx(threading.local):
 	'''
@@ -104,63 +109,71 @@ class _Engine(object):
 		self._connect = connect
 
 	def connect(self):
-		return self._connect
+	
+		return self._connect()
 
 
 def create_engine(user, password, database, host = '127.0.0.1', port = 3306,  **kw):
+	'''
+		if kw[use_unicode] is exit, then:
+			params[use_unicode] = kw[use_unicode]
+		else
+			params[use_unicode] = defaults[use_unicode]
+	'''
 	import mysql.connector
 	global engine
 	if engine is not None:
 		raise DBError('Engine is already initialized.')
 	params = dict(user = user, password = password, database = database, host = host, port = port)
-	defaults = dict(use_unicode = True, charset = 'utf8', collation = 'utf8_general_ci', autocommit = Flase)
+	defaults = dict(use_unicode = True, charset = 'utf8', collation = 'utf8_general_ci', autocommit = False)
 	for k, v in defaults.iteritems():
 		params[k] = kw.pop(k, v)
-		'''
-		if kw[use_unicode] is exit, then:
-		    params[use_unicode] = kw[use_unicode]
-		else
-			params[use_unicode] = defaults[use_unicode]
-		'''
+	print '-----------------'
+	print params
+	print '-------------------'
+		
 
 	params.update(kw)
 	params['buffered']  =True
 	engine = _Engine(lambda: mysql.connector.connect(**params))
+	
 	#test the connection....
 	logging.info('Init mysql engine <%s> ok.' % hex(id(engine)))
 
 class _ConnectionCtx(object):
 	'''
-    _ConnectionCtx object that can open and close connection context.
-    _ConnectionCtx object can be nested and only the most 
-    outer connection has effect.
+	_ConnectionCtx object that can open and close connection context.
+	_ConnectionCtx object can be nested and only the most 
+	outer connection has effect.
 
-    with connection():
-        pass
-        with connection():
-            pass
-    '''
-    def __enter__(self):
-    	global _db_ctx
-    	self.should_cleanup = False 
-    	''' if _db_ctx is init , then the should_cleanup is Flase ?????'''
-    	if not _db_ctx.is_init():
-    		_db_ctx.init()
-    		'''
-    		def init(self):
-        		logging.info('open lazy connection...')
-       			self.connection = _LasyConnection()
-        		self.transactions = 0
+	with connection():
+		pass
+		with connection():
+			pass
+	'''
+	def __enter__(self):
+		global _db_ctx
+		self.should_cleanup = False 
+		'''
+		if _db_ctx is init , then the should_cleanup is Flase ?????
+		'''
+		if not _db_ctx.is_init():
+			_db_ctx.init()
+			'''
+		def init(self):
+		logging.info('open lazy connection...')
+   			self.connection = _LasyConnection()
+		self.transactions = 0
 
-    		'''
-    		self.should_cleanup = True
+			'''
+			self.should_cleanup = True
 
-    	return self
+		return self
 
-    def __exit__(self, exctype, excvalue, traceback):
-    	global _db_ctx
-    	if self.should_cleanup:
-    		_db_ctx.cleanup()
+	def __exit__(self, exctype, excvalue, traceback):
+		global _db_ctx
+		if self.should_cleanup:
+			_db_ctx.cleanup()
 
 def connection():
 	return _ConnectionCtx()
@@ -175,19 +188,20 @@ def with_connection(func):
 	'''
 	@functools.wraps(func)
 	def _wrapper(*args, **kw):
-		with _connection():
+		with connection():
 			return func(*args, **kw)
 	return _wrapper
+
 	'''
 	when use this:
 	@with_connection
 	def func(*args, **kw):
 		pass
 
-	when use this function which means:
-	with_connection(func)(*args, **kw) ====> _wrapper(*args, **kw)
 
 	'''
+	#when use this function which means:
+	#with_connection(func)(*args, **kw)====> _wrapper(*args, **kw)
 
 
 class _TransactionCtx(object):
@@ -263,7 +277,7 @@ def _select(sql, first, *args):
 	'execute select SQL and return unique result of list results'
 	global _db_ctx
 	cursor = None
-	sql = sql.replace('?', '%s')  '''I donnot know what does this mean????'''
+	sql = sql.replace('?', '%s') # '''I donnot know what does this mean????'''
 	logging.info('SQL: %s, ARGS: %s' % (sql, args))
 	try:
 		cursor = _db_ctx.connection.cursor()
@@ -282,25 +296,25 @@ def _select(sql, first, *args):
 
 @with_connection
 def select_one(sql, *args):
-	'''
-    Execute select SQL and expected one result. 
-    If no result found, return None.
-    If multiple results found, the first one returned.
+	#'''
+	#Execute select SQL and expected one result. 
+	#If no result found, return None.
+	#If multiple results found, the first one returned.
 
-    >>> u1 = dict(id=100, name='Alice', email='alice@test.org', passwd='ABC-12345', last_modified=time.time())
-    >>> u2 = dict(id=101, name='Sarah', email='sarah@test.org', passwd='ABC-12345', last_modified=time.time())
-    >>> insert('user', **u1)
-    1
-    >>> insert('user', **u2)
-    1
-    >>> u = select_one('select * from user where id=?', 100)
-    >>> u.name
-    u'Alice'
-    >>> select_one('select * from user where email=?', 'abc@email.com')
-    >>> u2 = select_one('select * from user where passwd=? order by email', 'ABC-12345')
-    >>> u2.name    --------------------this is the first
-    u'Alice'
-    '''
+#	>>> u1 = dict(id=100, name='Alice', email='alice@test.org', passwd='ABC-12345', last_modified=time.time())
+#	>>> u2 = dict(id=101, name='Sarah', email='sarah@test.org', passwd='ABC-12345', last_modified=time.time())
+#	>>> insert('user', **u1)
+#	1
+#	>>> insert('user', **u2)
+#	1
+#	>>> u = select_one('select * from user where id=?', 100)
+#	>>> u.name
+#	u'Alice'
+#	>>> select_one('select * from user where email=?', 'abc@email.com')
+#	>>> u2 = select_one('select * from user where passwd=? order by email', 'ABC-12345')
+#	>>> u2.name
+#	u'Alice'
+#	'''
 	return _select(sql, True, *args)
 
 @with_connection
@@ -342,12 +356,12 @@ def update(sql, *args):
 
 	return _update(sql, *args)
 
-if __name__ = '__main__':
+if __name__ == '__main__':
 	logging.basicConfig(level = logging.DEBUG)
-	create_engine('www-data', 'www-data', 'test')
+	create_engine('root', '****your code***', 'test')
 	update('drop table if exists user')
 	update('create table user (id int primary key, name text, email text, passwd text, last_modified real)')
-    import doctest
-    doctest.testmod()
+	import doctest
+	doctest.testmod()
 
 
