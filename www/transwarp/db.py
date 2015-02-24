@@ -29,7 +29,7 @@ class Dict(dict):
 def next_id(t = None):
 	if t is None:
 		t = time.time()
-	return '%015d%s000' % (int(t * 1000), uuid,uuid4().hex)
+	return '%015d%s000' % (int(t * 1000), uuid.uuid4().hex)
 
 
 class _LasyConnection(object):
@@ -283,7 +283,7 @@ def _select(sql, first, *args):
 		cursor = _db_ctx.connection.cursor()
 		cursor.execute(sql, args)
 		if cursor.description:
-			name = [x[0] for x in cursor.description]
+			names = [x[0] for x in cursor.description]
 		if first:
 			value = cursor.fetchone()
 			if not value:
