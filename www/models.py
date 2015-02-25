@@ -1,7 +1,7 @@
 import time, uuid
 
-from tramswap.db import next_id
-from tramswap.orm import Model, StringField, BooleanField, FloatField, TextField
+from transwarp.db import next_id
+from transwarp.orm import Model, StringField, BooleanField, FloatField, TextField
 
 class User(Model):
 	__table__ = 'users'

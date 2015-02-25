@@ -8,6 +8,6 @@ Override configurations
 __author__ = 'arvin'
 configs = {
 	'db':{
-		'host': '192.168.0.100'
+		'host': '127.0.0.1'
 	}
 }

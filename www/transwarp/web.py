@@ -1367,7 +1367,7 @@ class WSGIApplication(object):
 		self._running = False
 		self._document_root = document_root
 
-		self._interceptor = []
+		self._interceptors = []
 		self._template_engine = None
 
 		self._get_static = {}
@@ -1468,7 +1468,7 @@ class WSGIApplication(object):
 					r = self._template_engine(r.template_name, r.model)
 				if isinstance(r, unicode):
 					r = r.encode('utf-8')
-				if r in None:
+				if r is None:
 					r = []
 				start_response(response.status, response.headers)
 				return r
