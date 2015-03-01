@@ -57,7 +57,6 @@ class _LasyConnection(object):
 			connection = self.connection
 			self.connection = None
 			logging.info('close connection <%s>...' % hex(id(connection)))
-			print connection
 			connection.close()
 
 
