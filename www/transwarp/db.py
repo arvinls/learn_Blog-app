@@ -128,10 +128,6 @@ def create_engine(user, password, database, host = '127.0.0.1', port = 3306,  **
 	defaults = dict(use_unicode = True, charset = 'utf8', collation = 'utf8_general_ci', autocommit = False)
 	for k, v in defaults.iteritems():
 		params[k] = kw.pop(k, v)
-	print '-----------------'
-	print params
-	print '-------------------'
-		
 
 	params.update(kw)
 	params['buffered']  =True
