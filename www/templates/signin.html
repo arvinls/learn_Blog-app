@@ -27,7 +27,7 @@ $(function(){
 		methods:{
 			submit: function(event){
 				event.preventDefault();
-				var email = this.email.trim().toString(),
+				var email = this.email.trim().toLowerCase();
 				showError();
 				startLoading();
 				postApi('/api/authenticate',{

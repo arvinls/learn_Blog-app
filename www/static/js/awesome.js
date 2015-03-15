@@ -33,7 +33,7 @@ function _ajax(method, url, data, callback) {
 }
 
 function getApi(url, data, callback) {
-    if (arguments.length === 2) {
+    if (arguments.length === 2) {  //arguments主要是可以对输入的参数进行跟踪
         callback = data;
         data = {};
     }
@@ -49,10 +49,10 @@ function postApi(url, data, callback) {
 }
 
 function startLoading() {
-    var btn = $('form').find('button[type=submit]');
-    var icon = btn.find('i');
+    var btn = $('form').find('button[type=submit]'); //find the submit button
+    var icon = btn.find('i');  
     icon.addClass('uk-icon-spinner').addClass('uk-icon-spin');
-    btn.attr('disabled', 'disabled');
+    btn.attr('disabled', 'disabled');  //make the button disable
 }
 
 function stopLoading() {

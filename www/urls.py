@@ -12,6 +12,15 @@ from config import configs
 _COOKIE_NAME = 'awesession'
 _COOKIE_KEY = configs.session.secret
 
+
+def _get_page_index():
+	page_index = 1
+	try:
+		page_index = int(ctx.request.get('page', '1'))
+	except ValueError:
+		pass
+	return page_index
+
 def make_signed_cookies(id, password, max_age):
 	#build cookie string by: id-expires-md5
 	expires = str(int(time.time() + (max_age or 86400)))
@@ -60,6 +69,14 @@ def manage_interceptor(next):
 	if user and user.admin:
 		return next()
 	raise seeother('/signin')
+
+
+
+def _get_blogs_by_page():
+	total = Blog.count_all()
+	page = Page(total, _get_page_index())
+	blogs = Blogs.find_by('order by create_at desc limit ?,?', page.offset, page.limit)
+	return blogs, page
 
 @view('blogs.html')
 @get('/')
@@ -127,6 +144,34 @@ def register_user():
 def register():
 	return dict()
 
+@view('mange_blog_list.html')
+@get('/manage/blogs')
+def manage_blogs():
+	return dict(page_index = _get_page_index(), user=ctx.request.user)	
+
+@view('manage_blog_edit.html')
+@get('/manage/blogs/create')
+def manage_blogs_create():
+	return dict(id=None, action='/api/blogs', redirect='/manage/blogs', user=ctx.request.user)
+
+@api
+@post('/api/blogs')
+def api_create_blog():
+	check_admin()
+	i = ctx.request.input(name='', summary='', content='')
+	name = i.name.strip()
+	summary = i.summary.strip()
+	content = i.content.strip()
+	if not name:
+		raise APIValueError('name', 'name cannot be empty.')
+	if not summary:
+		raise APIValueError('summary', 'content cannot be empty.')
+	if not content:
+		raise APIValueError('content', 'content cannot be empty.')
+	user = ctx.request.user
+	blog = Blog(user_id = user.id, user_name = user.name, name = name, summary = summary, content = content)
+	blog.insert()
+	return blog	
 
 @api
 @get('/api/users')
