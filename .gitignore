@@ -1,7 +1,19 @@
-#virtual environment
-D:\project_test\BlogApp\venv\
-venv\
+#Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
 
-#
+#Python
 *.pyc
+*.so
+*.egg
+*.egg-info
 qa*.py
+
+
+dist
+venv
+
+#My configuration
+db.ini
+deploy_key_rsa
