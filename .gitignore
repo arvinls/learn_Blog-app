@@ -3,4 +3,4 @@ D:\project_test\BlogApp\venv\
 venv\
 
 #
-.pyc
+*.pyc
