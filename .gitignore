@@ -1,8 +1,6 @@
 #virtual environment
 D:\project_test\BlogApp\venv\
+venv\
 
 #
-.pyc
-
-#
-D:\project_test\BlogApp\mynote\
+*.pyc
